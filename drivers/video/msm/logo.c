@@ -23,29 +23,15 @@
 
 #include <linux/irq.h>
 #include <asm/system.h>
-#include <mach/board.h>
 
 #define fb_width(fb)	((fb)->var.xres)
 #define fb_height(fb)	((fb)->var.yres)
-#define fb_size(fb)	((fb)->var.xres * (fb)->var.yres * ((fb)->var.bits_per_pixel/8))
-#define fb_bpp(fb)	((fb)->var.bits_per_pixel)
-
-#ifdef CONFIG_POWEROFF_CHARGING
-extern enum ANDROIDBOOTMODE androidboot_mode;
-#endif
+#define fb_size(fb)	((fb)->var.xres * (fb)->var.yres * 2)
 
 static void memset16(void *_ptr, unsigned short val, unsigned count)
 {
 	unsigned short *ptr = _ptr;
 	count >>= 1;
-	while (count--)
-		*ptr++ = val;
-}
-
-static void memset32(void *_ptr, unsigned val, unsigned count)
-{
-	unsigned *ptr = _ptr;
-	count >>= 2;
 	while (count--)
 		*ptr++ = val;
 }
@@ -57,17 +43,6 @@ int load_565rle_image(char *filename, bool bf_supported)
 	int fd, count, err = 0;
 	unsigned max;
 	unsigned short *data, *bits, *ptr;
-	unsigned rgb32, red, green, blue, alpha;
-
-
-#if 0 
-	if (androidboot_mode==ANDROIDBOOTMODE_BOOTOFFCHARGE)
-	{
-	        printk(KERN_ERR "skip load_565rle_image at offcharge for kernel\n");
-		return err;
-	}
-#endif
-
 
 	info = registered_fb[0];
 	if (!info) {
@@ -112,27 +87,8 @@ int load_565rle_image(char *filename, bool bf_supported)
 		unsigned n = ptr[0];
 		if (n > max)
 			break;
-
-                if (fb_bpp(info) == 16)
-                {
-			memset16(bits, ptr[1], n << 1);
-			bits += n;
-                }
-                else
-                {
-                        
-                        rgb32 = ((ptr[1] >> 11) & 0x1F);
-                        red = (rgb32 << 3) | (rgb32 >> 2);
-                        rgb32 = ((ptr[1] >> 5) & 0x3F);
-                        green = (rgb32 << 2) | (rgb32 >> 4);
-                        rgb32 = ((ptr[1]) & 0x1F);
-                        blue = (rgb32 << 3) | (rgb32 >> 2);
-                        alpha = 0xff;
-                        rgb32 = (alpha << 24) | (blue << 16)
-                        | (green << 8) | (red);
-                        memset32((uint32_t *)bits, rgb32, n << 2);
-                        bits += (n * 2);
-                }
+		memset16(bits, ptr[1], n << 1);
+		bits += n;
 		max -= n;
 		ptr += 2;
 		count -= 4;
