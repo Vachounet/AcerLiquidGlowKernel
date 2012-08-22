@@ -122,6 +122,7 @@ void adreno_ringbuffer_stop(struct adreno_ringbuffer *rb);
 void adreno_ringbuffer_close(struct adreno_ringbuffer *rb);
 
 void adreno_ringbuffer_issuecmds(struct kgsl_device *device,
+					struct adreno_context *drawctxt,
 					unsigned int flags,
 					unsigned int *cmdaddr,
 					int sizedwords);
@@ -136,6 +137,10 @@ void
 adreno_ringbuffer_restore(struct adreno_ringbuffer *rb, unsigned int *rb_buff,
 			int num_rb_contents);
 
+void adreno_print_fault_ib_work(struct work_struct *work);
+
+void adreno_print_fault_ib(struct kgsl_device *device);
+
 static inline int adreno_ringbuffer_count(struct adreno_ringbuffer *rb,
 	unsigned int rptr)
 {
@@ -149,6 +154,13 @@ static inline unsigned int adreno_ringbuffer_inc_wrapped(unsigned int val,
 							unsigned int size)
 {
 	return (val + sizeof(unsigned int)) % size;
+}
+
+/* Decrement a value by 4 bytes with wrap-around based on size */
+static inline unsigned int adreno_ringbuffer_dec_wrapped(unsigned int val,
+                                                        unsigned int size)
+{
+	return (val + size - sizeof(unsigned int)) % size;
 }
 
 #endif  /* __ADRENO_RINGBUFFER_H */
